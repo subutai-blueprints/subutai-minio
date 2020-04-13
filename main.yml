@@ -1,0 +1,62 @@
+---
+
+- hosts: localhost
+  tasks:
+    - name: Download minio
+      shell:
+        cmd: wget --no-check-certificate -O /tmp/minio https://ipfs.subutai.io/ipfs/QmYeLqo4amxoYBuyF4kvaPvYbRkTXTHuekXUsVj6uwvcFc/minio
+
+- hosts: all
+  remote_user: root
+  vars:
+    HOST_COUNT: "{{  groups.all  | length }}"
+  tasks:
+
+    # -------------------------------------------------------------------------
+    # Freshen up the host
+    # -------------------------------------------------------------------------
+
+    - name: Disable dpkg fsync
+      raw: test -e /etc/dpkg/dpkg.cfg.d/unsafe-io || echo force-unsafe-io > /etc/dpkg/dpkg.cfg.d/unsafe-io
+
+    - name: Upgrade debian
+      apt:
+        update_cache: true
+        upgrade: true
+
+    - name: copy minio binary
+      copy:
+        src: /tmp/minio
+        dest: /usr/local/bin/minio
+        mode: 777    
+
+    - name: copy minio service file
+      template:
+        src: minio.service
+        dest: /etc/systemd/system/minio.service
+        mode: 0644
+        
+    - name: Add IP address of all hosts to all hosts
+      lineinfile:
+        dest: /etc/hosts
+        regexp: "{{ hostvars[item]['ansible_hostname'] }}{{ hostvars[item]['ansible_hostname'] }}"
+        line: "{{hostvars[item]['ansible_default_ipv4']['address']}}  {{ hostvars[item]['ansible_hostname'] }}{{ hostvars[item]['ansible_hostname'] }} minio-{{ my_idx + 1}} "
+        state: present
+      loop: "{{ groups.all }}"
+      loop_control:
+        index_var: my_idx
+        
+    - name: copy default minio
+      template:
+        src: minio.j2 
+        dest: /etc/default/minio
+
+    - name: systemd reload
+      systemd:
+         daemon_reload: yes
+         
+    - name: start and enable minio service
+      systemd:	
+        name: minio	
+        state: started	
+        enabled: yes

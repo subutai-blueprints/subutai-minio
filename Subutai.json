@@ -1,0 +1,126 @@
+{
+  "name": "${environmentName}",
+  "description": "Minio Cluster",
+  "version": "1.0.0",
+  "author": "https://github.com/absidish",
+  "containers": [
+    {
+      "hostname": "minio",
+      "template": "debian-stretch",
+      "peer-criteria": "gr1",
+      "size": "CUSTOM",
+      "ram": {
+        "type": "ram",
+        "value": "${ram}"
+      },
+      "cpu": {
+        "type": "cpu",
+        "value": "${cpu}"
+      },
+      "disk": {
+        "type": "disk",
+        "value": "${disk}"
+      },
+     "port-mapping": [
+        {
+          "protocol": "http",
+          "domain": "${domain}",
+          "internal-port": "9199",
+          "external-port": "8080",
+          "ssl_backend": "true"
+        }
+      ],
+      "peer-layout": "d2"
+    }
+  ],
+  "peer-layouts": [
+    {
+      "name": "d2",
+      "peer-count": "${peerCount}",
+      "container-per-peer": "${containerPerPeerCount}"
+    }
+  ],
+  "peer-criteria": [
+    {
+      "name": "gr1"
+    }
+  ],
+  "ansible-configuration": {
+    "source-url": "https://github.com/absidish/minio/archive/master.zip",
+    "ansible-playbook": "main.yml",
+    "extra-vars": [
+       {
+        "key": "accessKey",
+        "value": "${accessKey}"
+        },
+            {
+        "key": "secretKey",
+        "value": "${secretKey}"
+        }
+    ],
+    "groups": [
+      {
+        "name": "servers",
+        "hostnames": [
+          "minio"
+        ]
+      }
+    ]
+  },
+  "user-variables": {
+    "environmentName": {
+      "description": "Enter the environment name",
+      "type": "string",
+      "default": "minioCluster",
+      "validation": "[a-zA-Z0-9]+"
+    },
+    "containerPerPeerCount": {
+      "description": "Containers count which will be located in each peer",
+      "type": "int",
+      "default": "1",
+      "validation": "[0-9]+"
+    },
+    "peerCount": {
+      "description": "Peer count which will where will be located containers",
+      "type": "int",
+      "default": "1",
+      "validation": "[0-9]+"
+    },
+      "ram": {
+      "description": "RAM amount in MB, each container will have entered about of RAM",
+      "type": "int",
+      "default": "128",
+      "validation": "[0-9]+"
+    },
+      "cpu": {
+      "description": "CPU in %",
+      "type": "int",
+      "default": "10",
+      "validation": "[0-9]+"
+     },
+      "disk": {
+      "description": "DISK amount in GB, each container will have entered storage amount in GB",
+      "type": "int",
+      "default": "10",
+      "validation": "[0-9]+"
+    },
+    "domain": {	
+      "description": "Enter the domain name",	
+      "type": "domain",	
+      "default": "change.the.domain",	
+      "validation": "[a-zA-Z0-9]+"	
+    },
+    "accessKey": {
+      "description": "On MinIO admin credentials or root credentials are only allowed to be changed using ENVs namely MINIO_ACCESS_KEY and MINIO_SECRET_KEY",
+      "type": "string",
+      "default": "changeme",
+      "validation": "[a-zA-Z0-9]+"
+    }, 
+    "secretKey": {
+      "description": "On MinIO admin credentials or root credentials are only allowed to be changed using ENVs namely MINIO_ACCESS_KEY and MINIO_SECRET_KEY",
+      "type": "string",
+      "default": "changeme",
+      "validation": "[a-zA-Z0-9]+"
+    },
+  }
+}
